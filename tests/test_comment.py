@@ -6,6 +6,26 @@ from posts.models import Comment
 class TestCommentAPI:
 
     @pytest.mark.django_db(transaction=True)
+    def test_comments_not_authenticated(self, client, post):
+        response = client.get(f'/api/v1/posts/{post.id}/comments/')
+
+        code = 200
+        assert response.status_code == code, (
+            'Анонимный пользователь при запросе `/api/v1/posts/{post.id}/comments/` '
+            f'должен получать ответ с кодом {code}'
+        )
+
+    @pytest.mark.django_db(transaction=True)
+    def test_comment_single_not_authenticated(self, client, post, comment_1_post):
+        response = client.get(f'/api/v1/posts/{post.id}/comments/{comment_1_post.id}/')
+
+        code = 200
+        assert response.status_code == code, (
+            'Анонимный пользователь при запросе `/api/v1/posts/{post.id}/comments/{comment.id}` '
+            f'должен получать ответ с кодом {code}'
+        )
+
+    @pytest.mark.django_db(transaction=True)
     def test_comments_not_found(self, user_client, post):
         response = user_client.get(f'/api/v1/posts/{post.id}/comments/')
 
