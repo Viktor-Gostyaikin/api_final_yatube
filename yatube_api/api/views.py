@@ -12,6 +12,7 @@ from .serializers import (
 
 User = get_user_model()
 
+
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer

@@ -6,6 +6,7 @@ from rest_framework.validators import UniqueTogetherValidator
 
 User = get_user_model()
 
+
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
@@ -84,7 +85,7 @@ class FollowSerializer(serializers.ModelSerializer):
         slug_field='username',
         queryset=User.objects.all()
     )
-    
+
     def validate(self, data):
         if self.context['request'].method != 'POST':
             return data
