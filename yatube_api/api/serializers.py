@@ -10,12 +10,7 @@ User = get_user_model()
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = (
-            'id',
-            'title',
-            'slug',
-            'description',
-        )
+        fields = ('__all__')
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -26,18 +21,8 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = (
-            'id',
-            'text',
-            'author',
-            'group',
-            'image',
-            'pub_date',
-        )
-        read_only_fields = (
-            'author',
-            'pub_date',
-        )
+        fields = ('__all__')
+        read_only_fields = ('pub_date',)
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -48,21 +33,23 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = (
-            'id',
-            'author',
-            'post',
-            'text',
-            'created',
-        )
+        fields = ('__all__')
         read_only_fields = (
-            'author',
             'post',
             'created',
         )
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    user = SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
+    following = SlugRelatedField(
+        slug_field='username',
+        queryset=User.objects.all()
+    )
 
     class Meta:
         model = Follow
@@ -74,23 +61,18 @@ class FollowSerializer(serializers.ModelSerializer):
             )
         ]
 
-    user = SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        default=serializers.CreateOnlyDefault(
-            serializers.CurrentUserDefault()
-        )
-    )
-    following = SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all()
-    )
-
     def validate(self, data):
-        if self.context['request'].method != 'POST':
-            return data
-        if self.context['request'].user == data['following']:
+        user = self.context['request'].user
+        follow_obj = data['following']
+        if user == follow_obj:
             raise serializers.ValidationError(
                 'Подписываться на себя нельзя!'
+            )
+        if Follow.objects.filter(
+            user=User.objects.get(username=user),
+            following=User.objects.get(username=follow_obj)
+        ).exists():
+            raise serializers.ValidationError(
+                'Вы уже подписались'
             )
         return data

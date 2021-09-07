@@ -1,11 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from posts.models import Follow, Group, Post
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.exceptions import ParseError, PermissionDenied
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
-from .permissions import IsAuthorOrReadOnlyPermission, IsUserAuthPermission
+from .permissions import IsAuthorOrReadOnlyPermission
 from .serializers import (
     CommentSerializer, FollowSerializer, GroupSerializer, PostSerializer,
 )
@@ -19,6 +19,7 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = (
         IsAuthorOrReadOnlyPermission,
     )
+    pagination_class = LimitOffsetPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -56,22 +57,13 @@ class FollowViewSet(
 ):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
-    permission_classes = (IsUserAuthPermission,)
-    http_method_names = ('get', 'post')
+    permission_classes = (permissions.IsAuthenticated,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('=following__username',)
 
     def perform_create(self, serializer):
         user = self.request.user
-        follow_obj = serializer.initial_data.get('following')
-        if user.username == follow_obj:
-            raise PermissionDenied('Невозможно подписаться на самого себя')
-        elif Follow.objects.filter(
-            user=user,
-            following=User.objects.get(username=follow_obj)
-        ).exists():
-            raise ParseError('Вы уже подписаны')
-        elif serializer.is_valid():
+        if serializer.is_valid():
             serializer.save(user=user)
             return Response(
                 serializer.data,
@@ -83,6 +75,4 @@ class FollowViewSet(
         )
 
     def get_queryset(self):
-        return Follow.objects.filter(
-            user__username=self.request.user.username
-        )
+        return self.request.user.follower.all()
