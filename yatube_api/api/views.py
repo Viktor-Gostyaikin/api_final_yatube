@@ -1,14 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from posts.models import Follow, Group, Post
-from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
+
+from posts.models import Follow, Group, Post
 
 from .permissions import IsAuthorOrReadOnlyPermission
-from .serializers import (
-    CommentSerializer, FollowSerializer, GroupSerializer, PostSerializer,
-)
+from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
+                          PostSerializer)
 
 User = get_user_model()
 
@@ -65,14 +64,6 @@ class FollowViewSet(
         user = self.request.user
         if serializer.is_valid():
             serializer.save(user=user)
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
     def get_queryset(self):
         return self.request.user.follower.all()

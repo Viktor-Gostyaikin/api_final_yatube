@@ -17,8 +17,8 @@ v1_patterns = [
     path('', include('djoser.urls')),
     path('', include('djoser.urls.jwt')),
     path('', include(router_v1.urls)),
+    path('v1/api-token-auth/', views.obtain_auth_token),
 ]
 urlpatterns = [
     path('v1/', include(v1_patterns)),
-    path('v1/api-token-auth/', views.obtain_auth_token),
 ]
